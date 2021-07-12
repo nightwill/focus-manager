@@ -8,9 +8,12 @@ public struct FocusableButton<Content: View>: View {
     @ViewBuilder
     public let content: () -> Content
 
+    @State private var isSelected: Bool = false
+
     public var body: some View {
         content()
-            .focusableControl(onAction: action, title: title)
+            .scaleEffect(isSelected ? 1.1 : 1)
+            .focusableControl(onFocusChange: { isSelected = $0 }, onAction: action, title: title)
     }
 
     public init(action: @escaping () -> Void, title: String? = nil, content: @escaping () -> Content) {
