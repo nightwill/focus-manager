@@ -5,10 +5,9 @@ public struct FocusID: Hashable, Equatable {
     fileprivate let id = UUID()
 }
 
-private let isDebug = false
-
 public final class FocusManager: ObservableObject {
 
+    private let isDebug: Bool
     private let id = UUID().uuidString.prefix(3)
 
     private var views: [FocusableViewContext] = []
@@ -21,7 +20,9 @@ public final class FocusManager: ObservableObject {
         return views.first(where: { $0.id == activeIndex })
     }
 
-    public init() {}
+    public init(isDebug: Bool = false) {
+        self.isDebug = isDebug
+    }
 
     func update(views: [FocusableViewContext]) {
         let activeViews = views.filter { !$0.bounds.isEmpty }
