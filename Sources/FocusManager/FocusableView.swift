@@ -18,8 +18,6 @@ public struct FocusableView: ViewModifier {
 
     public func body(content: Content) -> some View {
         content
-            .border(isSelected ? Color.blue : Color.clear)
-            .scaleEffect(isSelected ? 1.1 : 1)
             .anchorPreference(key: BoundsPreferenceKey.self, value: .bounds) { $0 }
             .backgroundPreferenceValue(BoundsPreferenceKey.self) { preferences in
                 makePreference()
