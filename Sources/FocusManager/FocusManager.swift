@@ -10,10 +10,8 @@ public final class FocusManager: ObservableObject {
     private let isDebug: Bool
     private let id = UUID().uuidString.prefix(3)
 
-    private var views: [FocusableViewContext] = []
+    private var views: Set<FocusableViewContext> = []
     private var activeIndex: FocusID?
-    /// Dictionary for storing views that send bounds before appearing
-    private var potentialViews: [FocusID: CGRect] = [:]
 
     private var selectedView: FocusableViewContext? {
         guard let activeIndex = activeIndex else {
@@ -29,44 +27,22 @@ public final class FocusManager: ObservableObject {
     public func reset() {
         activeIndex = nil
         views.removeAll()
-        potentialViews.removeAll()
     }
 
-    func update(bounds: CGRect, for id: FocusID) {
-        guard let index = views.firstIndex(where: { $0.id == id }) else {
-            potentialViews[id] = bounds
+    func update(context: FocusableViewContext) {
+        guard !context.bounds.isEmpty else {
+            debugPrint("[\(context.debugTitle)] empty frame. Skipping.")
             return
         }
-        guard !bounds.isEmpty else {
-            debugPrint("[\(views[index].debugTitle)] empty frame. Skipping.")
-            return
-        }
-        views[index].bounds = bounds
-        debugPrint("[\(views[index].debugTitle)] updated frame: \(views[index].bounds)")
 
-        if activeIndex == nil, views[index].isDefault {
-            select(views[index])
-        }
-    }
+        views.remove(context)
+        views.insert(context)
 
-    func registerView(context: FocusableViewContext) {
-        debugPrint("Registered view: \(context.debugTitle)")
-        guard !views.contains(context) else {
-            return
-        }
-        views.append(context)
-        
-        if let preexistedBounds = potentialViews[context.id] {
-            update(bounds: preexistedBounds, for: context.id)
-        }
-    }
+        debugPrint("[\(context.debugTitle)] updated frame: \(context.bounds)")
 
-    func unregisterView(id: FocusID) {
-        guard let index = views.firstIndex(where: { $0.id == id }) else {
-            return
+        if activeIndex == nil, context.isDefault {
+            select(context)
         }
-        debugPrint("Unregistered view: \(views[index].debugTitle)")
-        views.remove(at: index)
     }
 
     public func selectNextTop() {
@@ -121,34 +97,6 @@ public final class FocusManager: ObservableObject {
 
 // MARK: - Private Methods
 extension FocusManager {
-
-    private func applyNewSelectionIfNeeded(views: [FocusableViewContext]) {
-        guard let activeIndex = activeIndex else {
-            return
-        }
-        let allViews = self.views + views
-        if let newSelectedView = allViews.first(where: { $0.isSelected.wrappedValue && $0.id != activeIndex }) {
-            select(newSelectedView)
-        }
-    }
-
-    private func replace(views: [FocusableViewContext]) {
-        for view in views {
-            self.views.removeAll(where: { $0.id == view.id })
-            self.views.append(view)
-        }
-    }
-
-    private func selectDefault() {
-        guard let defaultView = self.views.first(where: { $0.isDefault }) else {
-            return
-        }
-        select(defaultView)
-    }
-
-    private func view(withID id: FocusID) -> FocusableViewContext? {
-        views.first(where: { $0.id == id })
-    }
 
     private func select(_ nextView: FocusableViewContext) {
         if let selectedView = selectedView {

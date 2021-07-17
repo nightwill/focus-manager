@@ -20,13 +20,11 @@ public struct FocusableView: ViewModifier {
 
     public func body(content: Content) -> some View {
         content
-            //.anchorPreference(key: BoundsPreferenceKey.self, value: .bounds) { $0 }
-//            .backgroundPreferenceValue(BoundsPreferenceKey.self) { preferences in
-//                GeometryReader { geometry in
-//                    updateViewBounds(geometry: geometry)
-//                }
-//            }
-
+            .background(
+                GeometryReader { geometry in
+                    updateViewBounds(geometry: geometry)
+                }
+            )
             .onTapGesture {
                 isSelected = true
             }
@@ -36,23 +34,18 @@ public struct FocusableView: ViewModifier {
             .onChange(of: isSelected, perform: { value in
                 onFocusChange?(isSelected)
             })
-            .onAppear {
-                focusManager.registerView(
-                    context: .init(id: id, isDefault: isDefault, isSelected: $isSelected, onEvent: onEvent, title: title)
-                )
-            }
-            .onDisappear {
-                focusManager.unregisterView(id: id)
-            }
-            .background(
-                GeometryReader { geometry in
-                    updateViewBounds(geometry: geometry)
-                }
-            )
     }
 
     private func updateViewBounds(geometry: GeometryProxy) -> some View {
-        focusManager.update(bounds: geometry.frame(in: .global), for: id)
+        let context = FocusableViewContext(
+            id: id,
+            isDefault: isDefault,
+            bounds: geometry.frame(in: .global),
+            isSelected: $isSelected,
+            onEvent: onEvent,
+            title: title
+        )
+        focusManager.update(context: context)
         return Color.clear
     }
 
@@ -65,18 +58,6 @@ public struct FocusableView: ViewModifier {
         default:
             break
         }
-    }
-
-}
-
-private struct BoundsPreferenceKey: PreferenceKey {
-
-    typealias Value = Anchor<CGRect>?
-
-    static var defaultValue: Value = nil
-
-    static func reduce(value: inout Value, nextValue: () -> Value) {
-        value = nextValue()
     }
 
 }
