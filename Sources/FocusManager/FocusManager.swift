@@ -12,6 +12,8 @@ public final class FocusManager: ObservableObject {
 
     private var views: [FocusableViewContext] = []
     private var activeIndex: FocusID?
+    /// Dictionary for storing views that send bounds before appearing
+    private var potentialViews: [FocusID: CGRect] = [:]
 
     private var selectedView: FocusableViewContext? {
         guard let activeIndex = activeIndex else {
@@ -26,10 +28,13 @@ public final class FocusManager: ObservableObject {
 
     public func reset() {
         activeIndex = nil
+        views.removeAll()
+        potentialViews.removeAll()
     }
 
     func update(bounds: CGRect, for id: FocusID) {
         guard let index = views.firstIndex(where: { $0.id == id }) else {
+            potentialViews[id] = bounds
             return
         }
         guard !bounds.isEmpty else {
@@ -50,6 +55,10 @@ public final class FocusManager: ObservableObject {
             return
         }
         views.append(context)
+        
+        if let preexistedBounds = potentialViews[context.id] {
+            update(bounds: preexistedBounds, for: context.id)
+        }
     }
 
     func unregisterView(id: FocusID) {
