@@ -27,6 +27,7 @@ public struct FocusableView: ViewModifier {
             )
             .onTapGesture {
                 isSelected = true
+                focusManager.selectView(by: id)
             }
             .onTapGesture(count: 2) {
                 onAction?()

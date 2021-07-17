@@ -45,6 +45,13 @@ public final class FocusManager: ObservableObject {
         }
     }
 
+    func selectView(by id: FocusID) {
+        guard let view = views.first(where: {$0.id == id }) else {
+            return
+        }
+        select(view)
+    }
+
     public func selectNextTop() {
         guard let rect = selectedView?.bounds else { return }
         let availableViews = views.filter { rect.minY > $0.bounds.minY  }
