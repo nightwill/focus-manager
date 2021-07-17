@@ -14,9 +14,7 @@ extension View {
     }
 
     public func attach(manager: FocusManager) -> some View {
-        self.onPreferenceChange(FocusableViewPreferenceKey.self, perform: { value in
-            manager.update(views: value)
-        })
+        self.environmentObject(manager)
     }
 
 }

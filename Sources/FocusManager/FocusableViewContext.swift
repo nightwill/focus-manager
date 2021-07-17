@@ -8,7 +8,7 @@ struct FocusableViewContext: Equatable {
 
     let id: FocusID
     let isDefault: Bool
-    let bounds: CGRect
+    var bounds: CGRect = .zero
     let isSelected: Binding<Bool>
     let onEvent: (FocusManagerEvent?) -> Void
     let title: String?

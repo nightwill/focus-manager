@@ -24,18 +24,40 @@ public final class FocusManager: ObservableObject {
         self.isDebug = isDebug
     }
 
-    func update(views: [FocusableViewContext]) {
-        let activeViews = views.filter { !$0.bounds.isEmpty }
+    public func reset() {
+        activeIndex = nil
+    }
 
-        for view in activeViews {
-            debugPrint("[\(view.debugTitle)] updated frame: \(view.bounds)")
+    func update(bounds: CGRect, for id: FocusID) {
+        guard let index = views.firstIndex(where: { $0.id == id }) else {
+            return
         }
-        
-        applyNewSelectionIfNeeded(views: activeViews)
-        replace(views: activeViews)
-        if activeIndex == nil {
-            selectDefault()
+        guard !bounds.isEmpty else {
+            debugPrint("[\(views[index].debugTitle)] empty frame. Skipping.")
+            return
         }
+        views[index].bounds = bounds
+        debugPrint("[\(views[index].debugTitle)] updated frame: \(views[index].bounds)")
+
+        if activeIndex == nil, views[index].isDefault {
+            select(views[index])
+        }
+    }
+
+    func registerView(context: FocusableViewContext) {
+        debugPrint("Registered view: \(context.debugTitle)")
+        guard !views.contains(context) else {
+            return
+        }
+        views.append(context)
+    }
+
+    func unregisterView(id: FocusID) {
+        guard let index = views.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+        debugPrint("Unregistered view: \(views[index].debugTitle)")
+        views.remove(at: index)
     }
 
     public func selectNextTop() {
@@ -127,7 +149,9 @@ extension FocusManager {
 
         debugPrint("[\(nextView.debugTitle)] will be selected")
         self.activeIndex = nextView.id
-        nextView.isSelected.wrappedValue = true
+        DispatchQueue.main.async {
+            nextView.isSelected.wrappedValue = true
+        }
     }
 
     private func debugPrint(_ message: String) {

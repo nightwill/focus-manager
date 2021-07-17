@@ -10,6 +10,8 @@ public struct FocusableView: ViewModifier {
     @State private var id = FocusID()
     @State private var isSelected: Bool = false
 
+    @EnvironmentObject var focusManager: FocusManager
+
     let isDefault: Bool
     let onFocusChange: FocusHandler?
     let onAction: ActionHandler?
@@ -18,10 +20,13 @@ public struct FocusableView: ViewModifier {
 
     public func body(content: Content) -> some View {
         content
-            .anchorPreference(key: BoundsPreferenceKey.self, value: .bounds) { $0 }
-            .backgroundPreferenceValue(BoundsPreferenceKey.self) { preferences in
-                makePreference()
-            }
+            //.anchorPreference(key: BoundsPreferenceKey.self, value: .bounds) { $0 }
+//            .backgroundPreferenceValue(BoundsPreferenceKey.self) { preferences in
+//                GeometryReader { geometry in
+//                    updateViewBounds(geometry: geometry)
+//                }
+//            }
+
             .onTapGesture {
                 isSelected = true
             }
@@ -31,17 +36,24 @@ public struct FocusableView: ViewModifier {
             .onChange(of: isSelected, perform: { value in
                 onFocusChange?(isSelected)
             })
+            .onAppear {
+                focusManager.registerView(
+                    context: .init(id: id, isDefault: isDefault, isSelected: $isSelected, onEvent: onEvent, title: title)
+                )
+            }
+            .onDisappear {
+                focusManager.unregisterView(id: id)
+            }
+            .background(
+                GeometryReader { geometry in
+                    updateViewBounds(geometry: geometry)
+                }
+            )
     }
 
-    private func makePreference() -> some View {
-        GeometryReader { geometry in
-            Color.clear.preference(
-                key: FocusableViewPreferenceKey.self,
-                value: [
-                    .init(id: id, isDefault: isDefault, bounds: geometry.frame(in: .global), isSelected: $isSelected, onEvent: onEvent, title: title)
-                ]
-            )
-        }
+    private func updateViewBounds(geometry: GeometryProxy) -> some View {
+        focusManager.update(bounds: geometry.frame(in: .global), for: id)
+        return Color.clear
     }
 
     private func onEvent(_ event: FocusManagerEvent?) {

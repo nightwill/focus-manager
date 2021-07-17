@@ -10,7 +10,7 @@ struct FocusableViewPreferenceKey: PreferenceKey {
         let newValues = nextValue()
         for newValue in newValues {
             if value.contains(newValue) {
-                //value.remove(newValue)
+                value.removeAll(where: { $0.id == newValue.id })
             }
             value.append(newValue)
         }
